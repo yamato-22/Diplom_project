@@ -1,0 +1,25 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+
+media/
+
+# Файлы, специфичные для IDE
+.idea/
+
+# Виртуальная среда
+.venv/
+venv/
+
+# Файлы конфигурации
+.env
+pg.env
+
+# Исключаем статические и медиа файлы
+media/
+static/
+
+# Временный файл Docker Compose
+docker-compose.yaml
