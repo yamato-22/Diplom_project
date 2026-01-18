@@ -1,7 +1,15 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, AbstractUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
+
+ROLE_CHOICES = (
+    ('supplier', 'Поставщик'),
+    ('buyer', 'Покупатель'),
+
+)
 
 class UserManager(BaseUserManager):
     """
@@ -27,9 +35,10 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_admin(self, login, email, password, **extra_fields):
+    def create_superuser(self, login, email, password, **extra_fields):
         """
         Создаем пользователя с полномочиями адммминистратора
+        :param login:
         :param email:
         :param password:
         :param extra_fields:
@@ -42,16 +51,15 @@ class UserManager(BaseUserManager):
         return self.create_user(login, email, password, **extra_fields)
 
 
-class User(AbstractUser):
+class CustomUser(AbstractBaseUser, PermissionsMixin):
     """
-    Стандартная модель пользователей
+    Кастомная модель пользователя, построенная с нуля.
     """
-    REQUIRED_FIELDS = []
-    objects = UserManager()
-    USERNAME_FIELD = 'email'
+
+    USERNAME_FIELD = 'email'  # Основной идентификатор пользователя — email
+    REQUIRED_FIELDS = ['username']  # Обязательные поля при создании пользователя
+
     email = models.EmailField(_('email address'), unique=True)
-    company = models.CharField(verbose_name='Компания', max_length=40, blank=True)
-    position = models.CharField(verbose_name='Должность', max_length=40, blank=True)
     username_validator = UnicodeUsernameValidator()
     username = models.CharField(
         _('username'),
@@ -62,6 +70,10 @@ class User(AbstractUser):
             'unique': _("A user with that username already exists."),
         },
     )
+    company = models.CharField(verbose_name='Компания', max_length=40, blank=True)
+    position = models.CharField(verbose_name='Должность', max_length=40, blank=True)
+    # is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(
         _('active'),
         default=False,
@@ -70,12 +82,50 @@ class User(AbstractUser):
             'Unselect this instead of deleting accounts.'
         ),
     )
-    type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=5, default='buyer')
+    role = models.CharField(verbose_name='Тип пользователя', choices=ROLE_CHOICES, max_length=5, default='buyer')
+
+
+
+    objects = UserManager()
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return self.email
 
-    class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = "Список пользователей"
-        ordering = ('email',)
+
+# class User(AbstractUser):
+#     """
+#     Стандартная модель пользователей
+#     """
+#     REQUIRED_FIELDS = []
+#     objects = UserManager()
+#     USERNAME_FIELD = 'email'
+#     email = models.EmailField(_('email address'), unique=True)
+#     company = models.CharField(verbose_name='Компания', max_length=40, blank=True)
+#     position = models.CharField(verbose_name='Должность', max_length=40, blank=True)
+#     username_validator = UnicodeUsernameValidator()
+#     username = models.CharField(
+#         _('username'),
+#         max_length=150,
+#         help_text=_('Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+#         validators=[username_validator],
+#         error_messages={
+#             'unique': _("A user with that username already exists."),
+#         },
+#     )
+#     is_active = models.BooleanField(
+#         _('active'),
+#         default=False,
+#         help_text=_(
+#             'Designates whether this user should be treated as active. '
+#             'Unselect this instead of deleting accounts.'
+#         ),
+#     )
+#     type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=5, default='buyer')
+#
+#     def __str__(self):
+#         return f'{self.first_name} {self.last_name}'
+#
+#     class Meta:
+#         verbose_name = 'Пользователь'
+#         verbose_name_plural = "Список пользователей"
+#         ordering = ('email',)
