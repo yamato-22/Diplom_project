@@ -13,6 +13,9 @@ media/
 .venv/
 venv/
 
+# Файлы миграций
+*/migrations/*.py
+
 # Файлы конфигурации
 .env
 pg.env
