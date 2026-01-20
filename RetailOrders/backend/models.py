@@ -6,6 +6,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, AbstractUser, BaseUserManager, PermissionsMixin
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
@@ -66,11 +67,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Понятный идентификатор,
     # для предоставления User в пользовательском интерфейсе
     username = models.CharField(
-        _('username'),
-        db_index=True,
-        max_length=255,
-        unique=True,
-        help_text=_('Required. 250 characters or fewer. Letters, digits and @/./+/-/_ only.'),
+        _('username'), db_index=True, max_length=255,
+        unique=True, help_text=_('Required. 250 characters or fewer. Letters, '
+                                 'digits and @/./+/-/_ only.'),
         validators=[username_validator],
         error_messages={
             'unique': _("A user with that username already exists."),
@@ -164,3 +163,37 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+
+class Contact(models.Model):
+    objects = models.Manager()
+
+    lastname = models.CharField(max_length=100,
+                            verbose_name='Фамилия', blank=True, null=True)
+    firstname = models.CharField(max_length=100,
+                                verbose_name='Имя', blank=True, null=True)
+    middlename = models.CharField(max_length=100,
+                                 verbose_name='Отчество', blank=True, null=True)
+    email = models.EmailField(_('email address'), blank=False, null=False,
+                              validators=[validate_email],
+                              error_messages={
+                                  'invalid': _("Invalid email format"),
+                              },
+    )
+    phone_number = models.CharField(max_length=16, verbose_name='Номер телефона',
+                                    blank=False, null=False)
+    city = models.CharField(max_length=50, verbose_name='Город', blank=True)
+    street = models.CharField(max_length=100, verbose_name='Улица', blank=True)
+    house = models.CharField(max_length=5, verbose_name='Дом', blank=True)
+    structure = models.CharField(max_length=5, verbose_name='Корпус', blank=True)
+    building = models.CharField(max_length=5, verbose_name='Строение', blank=True)
+    apartment = models.CharField(max_length=5, verbose_name='Квартира', blank=True)
+    user = models.ForeignKey(User, verbose_name='Пользователь',
+                             related_name='contacts', null=False, blank=False,
+                             on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Контакты пользователя'
+        verbose_name_plural = "Список контактов пользователя"
+
+    def __str__(self):
+        return f'{self.lastname} {self.firstname} {self.middlename} {self.city}'
