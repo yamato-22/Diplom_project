@@ -78,7 +78,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     # Email - наиболее распространенная форма учетных данных
     email = models.EmailField(_('email address'), db_index=True, unique=True)
-    company = models.CharField(verbose_name='Компания', max_length=100, blank=True)
     position = models.CharField(verbose_name='Должность', max_length=100, blank=True)
     is_active = models.BooleanField(
         _('active'),
@@ -143,3 +142,25 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'Пользователь'
         verbose_name_plural = "Список пользователей"
         ordering = ('email',)
+
+
+class Company(models.Model):
+    objects = models.Manager()
+
+    name = models.CharField(max_length=100,
+                            verbose_name='Название компании')
+    url = models.URLField(verbose_name='Ссылка на сайт компании',
+                          null=True, blank=True)
+    state_orders = models.BooleanField(verbose_name='Статус получения заказов',
+                                       default=True)
+    owner = models.ForeignKey(User, verbose_name='Владелец компании',
+                              null=True, blank=True, on_delete=models.CASCADE)
+
+
+    class Meta:
+        verbose_name = 'Компания розничной торговли'
+        verbose_name_plural = "Список компаний розничной торговли"
+        ordering = ('-name',)
+
+    def __str__(self):
+        return self.name
