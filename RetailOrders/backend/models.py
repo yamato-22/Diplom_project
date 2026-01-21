@@ -106,7 +106,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         Позволяет получить токен пользователя путем вызова user.token, вместо
         user._generate_jwt_token(). Декоратор @property выше делает это
-        возможным. token называется "динамическим свойством".
+        возможным, "token" называется "динамическим свойством".
         """
         return self._generate_jwt_token()
 
@@ -197,3 +197,78 @@ class Contact(models.Model):
 
     def __str__(self):
         return f'{self.lastname} {self.firstname} {self.middlename} {self.city}'
+
+
+class Category(models.Model):
+    objects = models.Manager()
+    name = models.CharField(max_length=50, verbose_name='Название')
+    companies = models.ManyToManyField(Company, verbose_name='Компании', related_name='categories', blank=True)
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = "Список категорий"
+        ordering = ('-name',)
+
+    def __str__(self):
+        return self.name
+
+class Product(models.Model):
+    objects = models.Manager()
+    name = models.CharField(max_length=80, verbose_name='Название')
+    description = models.CharField(max_length=150, verbose_name='Описание')
+    article = models.PositiveIntegerField(verbose_name='Артикул',
+                                          unique=True, blank=False)
+    quantity = models.PositiveIntegerField(verbose_name='Количество')
+    price = models.PositiveIntegerField(verbose_name='Цена')
+    category = models.ForeignKey(Category, verbose_name='Категория',
+                                 related_name='products', blank=True,
+                                 on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, verbose_name="Поставщик",
+                                related_name='products', blank=True,
+                                on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Продукт'
+        verbose_name_plural = "Список продуктов"
+        ordering = ('-name',)
+
+    def __str__(self):
+        return f'{self.name} {self.article}'
+
+class Property(models.Model):
+    objects = models.Manager()
+    name = models.CharField(max_length=30, verbose_name="Название", blank=False)
+    value = models.CharField(max_length=10, verbose_name="Единица измерения", blank=True)
+
+    class Meta:
+        verbose_name = 'Характеристика'
+        verbose_name_plural = "Список характеристик"
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'value'], name='unique_property'),
+        ]
+        ordering = ('-name',)
+
+    def __str__(self):
+        return self.name
+
+
+class ProductProperty(models.Model):
+    objects = models.Manager()
+    quantity = models.CharField(max_length=50,
+                                verbose_name="Значение параметра", blank=True)
+    property = models.ForeignKey(Property, verbose_name="Характеристика",
+                                 related_name='properties', blank=True,
+                                 on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, verbose_name='Продукт',
+                                 related_name='products', blank=True,
+                                 on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Характеристика продукта'
+        verbose_name_plural = "Список характеристик"
+        constraints = [
+            models.UniqueConstraint(fields=['product', 'property'], name='unique_product_parameter'),
+        ]
+
+    def __str__(self):
+        return f'{self.product.name} {self.property.name}'
