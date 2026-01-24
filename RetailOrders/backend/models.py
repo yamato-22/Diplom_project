@@ -1,9 +1,7 @@
-import jwt
 
-from datetime import datetime, timedelta
 
 from django.db import models
-from django.conf import settings
+# from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, AbstractUser, BaseUserManager, PermissionsMixin
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import validate_email
@@ -70,33 +68,47 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     """
-    Кастомная модель пользователя, построенная с нуля.
+    Кастомная модель пользователя.
     """
 
     # Валидатор для имени пользователя
     username_validator = UnicodeUsernameValidator()
-    # Понятный идентификатор,
-    # для предоставления User в пользовательском интерфейсе
     username = models.CharField(
-        _('username'), db_index=True, max_length=255,
-        unique=True, help_text=_('Required. 250 characters or fewer. Letters, '
-                                 'digits and @/./+/-/_ only.'),
+        _("username"),
+        max_length=150,
+        unique=True,
+        help_text=_(
+            "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+        ),
         validators=[username_validator],
         error_messages={
-            'unique': _("A user with that username already exists."),
+            "unique": _("A user with that username already exists."),
         },
     )
-    # Email - наиболее распространенная форма учетных данных
-    email = models.EmailField(_('email address'), db_index=True, unique=True)
+    email = models.EmailField(_('email address'), db_index=True, unique=True,
+                              blank=False, null=False,
+                              validators=[validate_email],
+                              error_messages={
+                                  'invalid': _("Invalid email format"),
+                              },
+                              )
+    first_name = models.CharField(max_length=150, verbose_name='Имя',  blank=True)
+    last_name = models.CharField(max_length=150, verbose_name='Фамилия', blank=True)
+    middle_name = models.CharField(max_length=150, verbose_name='Отчество', blank=True)
     position = models.CharField(verbose_name='Должность', max_length=100, blank=True)
+    is_staff = models.BooleanField(
+        _("staff status"),
+        default=False,
+        help_text=_("Designates whether the user can log into this admin site."),
+    )
     is_active = models.BooleanField(
-        _('active'),
+        _("active"),
         default=True,
         help_text=_(
-            'The flag determines whether the user is active or deleted'
+            "Designates whether this user should be treated as active. "
+            "Unselect this instead of deleting accounts."
         ),
     )
-    is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     role = models.CharField(verbose_name='Тип пользователя', choices=ROLE_CHOICES, max_length=8, default='buyer')
     # Временная метка создания объекта.
@@ -105,48 +117,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = 'email'  # Основной идентификатор пользователя — email
-    REQUIRED_FIELDS = ['username']  # Обязательные поля при создании пользователя
+    REQUIRED_FIELDS = []  # Обязательные поля при создании пользователя
 
     objects = UserManager()
 
     def __str__(self):
-        return f'{self.username} {self.email}'
-
-    @property
-    def token(self):
-        """
-        Позволяет получить токен пользователя путем вызова user.token, вместо
-        user._generate_jwt_token(). Декоратор @property выше делает это
-        возможным, "token" называется "динамическим свойством".
-        """
-        return self._generate_jwt_token()
-
-    def get_full_name(self):
-        """
-        Этот метод требуется Django для таких вещей, как обработка электронной
-        почты. Обычно это имя фамилия пользователя, но поскольку мы не
-        используем их, будем возвращать username.
-        """
-        return self.username
-
-    def get_short_name(self):
-        """ Аналогично методу get_full_name(). """
-        return self.username
-
-    def _generate_jwt_token(self):
-        """
-        Генерирует веб-токен JSON, в котором хранится идентификатор этого
-        пользователя, срок действия токена составляет 1 день от создания
-        """
-        dt = datetime.now() + timedelta(days=1)
-
-        token = jwt.encode({
-            'id': self.pk,
-            'exp': int(dt.strftime('%s'))
-        }, settings.SECRET_KEY, algorithm='HS256')
-
-        return token.decode('utf-8')
-
+        return f'{self.first_name} {self.last_name} {self.email}'
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -178,18 +154,6 @@ class Company(models.Model):
 class Contact(models.Model):
     objects = models.Manager()
 
-    lastname = models.CharField(max_length=100,
-                            verbose_name='Фамилия', blank=True, null=True)
-    firstname = models.CharField(max_length=100,
-                                verbose_name='Имя', blank=True, null=True)
-    middlename = models.CharField(max_length=100,
-                                 verbose_name='Отчество', blank=True, null=True)
-    email = models.EmailField(_('email address'), blank=False, null=False,
-                              validators=[validate_email],
-                              error_messages={
-                                  'invalid': _("Invalid email format"),
-                              },
-    )
     phone_number = models.CharField(max_length=16, verbose_name='Номер телефона',
                                     blank=False, null=False)
     city = models.CharField(max_length=50, verbose_name='Город', blank=True)
@@ -212,7 +176,7 @@ class Contact(models.Model):
 
 class Category(models.Model):
     objects = models.Manager()
-    name = models.CharField(max_length=50, verbose_name='Название', unique=True)
+    name = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
     companies = models.ManyToManyField(Company, verbose_name='Компании', related_name='categories', blank=True)
 
     class Meta:

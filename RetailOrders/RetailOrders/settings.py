@@ -13,11 +13,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
@@ -42,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',  # Черный список для управления устаревшими токенами
     'backend',
 ]
 
@@ -129,3 +133,20 @@ STATIC_URL = 'static/'
 AUTH_USER_MODEL = 'backend.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),       # Время жизни access-токена (5 минут)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),          # Время жизни refresh-токена (1 день)
+    'ROTATE_REFRESH_TOKENS': True,                        # Ротация refresh-токенов при обновлении
+    'BLACKLIST_AFTER_ROTATION': True,                    # Добавлять старые refresh-токены в черный список
+    'UPDATE_LAST_LOGIN': False,                          # Автоматическое обновление поля last_login
+    'ALGORITHM': 'HS256',                                # Алгоритм шифрования (HMAC SHA-256)
+    'SIGNING_KEY': SECRET_KEY,                           # Ключ для подписания токенов
+    'AUTH_HEADER_TYPES': ('Bearer',),                    # Тип авторизационного заголовка
+}
