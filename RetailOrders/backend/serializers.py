@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Contact, Company
+from .models import User, Contact, Company, Category, Product, Property, ProductProperty, Order, OrderItem
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -57,3 +57,48 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Используем свой метод create_user
         return User.objects.create_user(**validated_data)
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ('id', 'name')
+        read_only_fields = ('id',)
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    company = CompanySerializer(read_only=True)
+
+    class Meta:
+        model = Product
+        fields = ('name', 'description', 'article', 'quantity', 'price', 'category', 'company')
+
+class PropertySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Property
+        fields = ('name', 'value')
+
+
+class ProductPropertySerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    property = PropertySerializer(read_only=True)
+    class Meta:
+        model = ProductProperty
+        fields = ('product', 'property', 'quantity')
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    user = UserSerializer(write_only=True)
+    class Meta:
+        model = Order
+        fields = ('id', 'created_at', 'updated_at', 'status', 'total_amount','user')
+        read_only_fields = ('id',)
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    order = OrderSerializer(read_only=True)
+    product = ProductSerializer(read_only=True)
+    class Meta:
+        model = OrderItem
+        fields = ('id', 'order', 'product', 'quantity', 'total_cost')
+        read_only_fields = ('id')
