@@ -55,7 +55,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        # Используем свой метод create_user
+        # Используем переопределенный метод create_user
         return User.objects.create_user(**validated_data)
 
 class CategorySerializer(serializers.ModelSerializer):

@@ -5,7 +5,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, AbstractUser, BaseUserManager, PermissionsMixin
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import validate_email
-from django.db.models import ForeignKey
 from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
@@ -171,7 +170,8 @@ class Contact(models.Model):
         verbose_name_plural = "Список контактов пользователя"
 
     def __str__(self):
-        return f'{self.lastname} {self.firstname} {self.middlename} {self.city}'
+        return (f'{self.city} {self.street} {self.house} {self.structure} '
+                f'{self.building} {self.apartment}')
 
 
 class Category(models.Model):
@@ -252,9 +252,9 @@ class Order(models.Model):
     objects = models.Manager()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    status = models.CharField(choices=STATUS_CHOICES, default="new")
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="new")
     total_amount = models.PositiveIntegerField(default=0)
-    user=ForeignKey(User, verbose_name='Покупатель', related_name='user',
+    user = models.ForeignKey(User, verbose_name='Покупатель', related_name='user',
                     blank=True, on_delete=models.CASCADE)
 
     class Meta:
@@ -266,9 +266,9 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     objects = models.Manager()
-    order = ForeignKey(Order, verbose_name='Заказ', related_name='order',
+    order = models.ForeignKey(Order, verbose_name='Заказ', related_name='order',
                     blank=True, on_delete=models.CASCADE)
-    product = ForeignKey(Product, verbose_name='Товар', related_name='product',
+    product = models.ForeignKey(Product, verbose_name='Товар', related_name='product',
                     blank=True, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=0, verbose_name='Количество')
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
