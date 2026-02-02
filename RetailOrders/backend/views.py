@@ -36,8 +36,8 @@ class RegisterAccount(APIView):
                 if user_serializer.is_valid():
                     # сохраняем пользователя
                     user = user_serializer.save()
-                    user.set_password(request.data['password'])
-                    user.save()
+                    # user.set_password(request.data['password'])
+                    # user.save()
                     return JsonResponse({'Status': True})
                 else:
                     return JsonResponse({'Status': False, 'Errors': user_serializer.errors})
@@ -46,6 +46,12 @@ class RegisterAccount(APIView):
 
 
 class AccountDetails(APIView):
+    """
+    Methods:
+    - get: Retrieve the details of the authenticated user.
+    - post: Update the account details of the authenticated user.
+    """
+
 
     def get(self, request: Request, *args, **kwargs):
 
@@ -54,3 +60,23 @@ class AccountDetails(APIView):
 
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        """
+                Update the account details of the authenticated user, without password.
+
+                Args:
+                - request (Request): The Django request object.
+
+                Returns:
+                - JsonResponse: The response indicating the status of the operation and any errors.
+                """
+        if not request.user.is_authenticated:
+            return JsonResponse({'Status': False, 'Error': 'Log in required'}, status=403)
+        # проверяем аргументы на валидность
+        user_serializer = UserSerializer(request.user, data=request.data, partial=True)
+        if user_serializer.is_valid():
+            user_serializer.save()
+            return JsonResponse({'Status': True})
+        else:
+            return JsonResponse({'Status': False, 'Errors': user_serializer.errors})

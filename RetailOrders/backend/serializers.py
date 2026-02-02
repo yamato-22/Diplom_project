@@ -27,8 +27,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'last_name', 'email', 'company', 'position', 'contacts')
-        read_only_fields = ('id',)
+        fields = ('id', 'username', 'first_name', 'last_name', 'middle_name',
+                  'email', 'company', 'position', 'contacts')
+        read_only_fields = ('id','email')
 
 class UserCreateSerializer(serializers.ModelSerializer):
     """
@@ -45,17 +46,19 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'email', 'password')
+        fields = ('first_name', 'last_name', 'middle_name', 'position', 'username', 'email', 'password')
         extra_kwargs = {
-            'first_name': {'required': True, 'allow_blank': False},
-            'last_name': {'required': True, 'allow_blank': False},
+            'first_name': {'required': False, 'allow_blank': True},
+            'last_name': {'required': False, 'allow_blank': True},
+            'middle_name': {'required': False, 'allow_blank': True},
+            'position': {'required': False, 'allow_blank': True},
             'username': {'required': True, 'allow_blank': False},
             'email': {'required': True, 'allow_blank': False},
             'password': {'write_only': True, 'required': True, 'allow_blank': False},
         }
 
     def create(self, validated_data):
-        # Используем переопределенный метод create_user
+        # Используем переопределенный в менеджере метод create_user
         return User.objects.create_user(**validated_data)
 
 class CategorySerializer(serializers.ModelSerializer):
