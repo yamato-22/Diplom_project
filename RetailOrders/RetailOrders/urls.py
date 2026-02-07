@@ -18,12 +18,14 @@ from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from backend.views import RegisterAccount, AccountDetails
+# from backend.views import RegisterAccount
+
+from backend.views import RegisterAccount, UserRetrieveUpdate
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/user/register', RegisterAccount.as_view(), name='user-register'),
-    path('api/user/details', AccountDetails.as_view(), name='user-details'),
+    path('api/user/retrieveupdate', UserRetrieveUpdate.as_view(), name='user-details'),
     path('api/token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
 ]
