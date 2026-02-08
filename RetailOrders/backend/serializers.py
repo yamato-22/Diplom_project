@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import User, Contact, Company, Category, Product, Property, ProductProperty, Order, OrderItem
+from django.utils.translation import gettext_lazy as _
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -60,6 +61,28 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Используем переопределенный в менеджере пользователей метод create_user
         return User.objects.create_user(**validated_data)
+
+
+class UserChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(
+        max_length=128, write_only=True, required=True
+    )
+    new_password = serializers.CharField(
+        max_length=128, min_length=8, write_only=True, required=True
+    )
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError(
+                _('Your old password was entered incorrectly. Please enter it again.')
+            )
+        return value
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data['new_password'])
+        instance.save()
+        return instance
 
 
 class CategorySerializer(serializers.ModelSerializer):
