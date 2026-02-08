@@ -153,7 +153,7 @@ class Company(models.Model):
 class Contact(models.Model):
     objects = models.Manager()
 
-    phone_number = models.CharField(max_length=16, verbose_name='Номер телефона',
+    phone = models.CharField(max_length=16, verbose_name='Номер телефона',
                                     blank=False, null=False)
     city = models.CharField(max_length=50, verbose_name='Город', blank=True)
     street = models.CharField(max_length=100, verbose_name='Улица', blank=True)

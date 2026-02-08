@@ -18,8 +18,13 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = ('id', 'phone', 'city', 'street', 'structure', 'building', 'apartment', 'user')
         read_only_fields = ('id',)
         extra_kwargs = {
-            'user': {'write_only': True}
+            'user': {'write_only': True},
+            'phone': {'required': True, 'allow_blank': False},
+            'city': {'required': True, 'allow_blank': False},
+            'street': {'required': True, 'allow_blank': False},
+            'apartment': {'required': True, 'allow_blank': False},
         }
+
 
 
 class UserSerializer(serializers.ModelSerializer):
