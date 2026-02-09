@@ -7,8 +7,9 @@ from rest_framework.request import Request
 #from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Contact
-from .serializers import UserSerializer, UserCreateSerializer, UserChangePasswordSerializer, ContactSerializer
+from .models import Contact, Company
+from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
+                          ContactSerializer, CompanySerializer)
 
 
 # Create your views here.
@@ -70,7 +71,7 @@ class UserRetrieveUpdate(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class ChangePasswordView(APIView):
+class ChangeUserPasswordView(APIView):
     """
     Changing the password of an authenticated user.
     """
@@ -156,6 +157,41 @@ class ContactDetailView(APIView):
     def delete(self, request, pk):
         contact = self.get_contact(pk, user = request.user)
         if contact is None:
-            return Response({"Message": f"Contact id = {pk} not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"Message": f"Contact id = {pk} not found"},
+                            status=status.HTTP_404_NOT_FOUND)
         contact.delete()
-        return Response({"Message": f"Contact id = {pk} successfully deleted"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"Message": f"Contact id = {pk} successfully deleted"},
+                        status=status.HTTP_204_NO_CONTENT)
+
+class CompanyAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, company_id=None):
+        if company_id:
+            company = Company.objects.get(id=company_id)
+            serializer = CompanySerializer(company)
+            return Response(serializer.data)
+        else:
+            companies = Company.objects.all()
+            serializer = CompanySerializer(companies, many=True)
+            return Response(serializer.data)
+
+    def post(self, request):
+        serializer = CompanySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(owner=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, company_id):
+        company = Company.objects.get(id=company_id)
+        serializer = CompanySerializer(company, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, company_id):
+        company = Company.objects.get(id=company_id)
+        company.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

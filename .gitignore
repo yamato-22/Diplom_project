@@ -26,3 +26,9 @@ static/
 
 # Временный файл Docker Compose
 docker-compose.yaml
+
+# Файл загрузки данных
+RetailOrders/load_data.py
+
+#Файл с данными
+RetailOrders/data/shop1.yaml

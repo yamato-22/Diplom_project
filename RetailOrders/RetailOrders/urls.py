@@ -20,14 +20,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 # from backend.views import RegisterAccount
 
-from backend.views import RegisterAccount, UserRetrieveUpdate, ChangePasswordView, ContactsView, ContactDetailView
+from backend.views import RegisterAccount, UserRetrieveUpdate, ChangeUserPasswordView, ContactsView, ContactDetailView
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/user/register', RegisterAccount.as_view(), name='user-register'),
     path('api/user/retrieveupdate', UserRetrieveUpdate.as_view(), name='user-details'),
-    path('api/user/changepassword', ChangePasswordView.as_view(), name='user-changepassword'),
+    path('api/user/changepassword', ChangeUserPasswordView.as_view(), name='user-changepassword'),
     path('api/token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/user/contact', ContactsView.as_view(), name='contacts'),
