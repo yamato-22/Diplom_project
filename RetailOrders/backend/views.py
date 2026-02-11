@@ -166,9 +166,18 @@ class ContactDetailView(APIView):
 class CompanyAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get_company(self, company_id):
+        try:
+            return Company.objects.get(id=company_id)
+        except Company.DoesNotExist:
+            return None
+
     def get(self, request, company_id=None):
         if company_id:
-            company = Company.objects.get(id=company_id)
+            company = self.get_company(company_id)
+            if company is None:
+                return Response({"Company": f"Company id = {company_id} not found"},
+                                status=status.HTTP_404_NOT_FOUND)
             serializer = CompanySerializer(company)
             return Response(serializer.data)
         else:
@@ -184,14 +193,27 @@ class CompanyAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, company_id):
-        company = Company.objects.get(id=company_id)
-        serializer = CompanySerializer(company, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        company = self.get_company(company_id)
+
+        if company:
+            # Проверяем, является ли текущий пользователь владельцем компании
+            if company.owner != request.user:
+                return Response({"Message": 'You are not the owner of this company'},
+                                status=status.HTTP_403_FORBIDDEN)
+            serializer = CompanySerializer(company, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Company": f"Company id = {company_id} not found"},
+                                status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, company_id):
-        company = Company.objects.get(id=company_id)
+        company = self.get_company(company_id)
+        if company is None:
+            return Response({"Company": f"Company id = {company_id} not found"},
+                            status=status.HTTP_404_NOT_FOUND)
+        company_name = company.name
         company.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"Message": f"Company  {company_name} successfully deleted"},
+                        status=status.HTTP_204_NO_CONTENT)

@@ -20,7 +20,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 # from backend.views import RegisterAccount
 
-from backend.views import RegisterAccount, UserRetrieveUpdate, ChangeUserPasswordView, ContactsView, ContactDetailView
+from backend.views import (RegisterAccount, UserRetrieveUpdate, ChangeUserPasswordView, ContactsView,
+                           ContactDetailView, CompanyAPIView)
 
 
 urlpatterns = [
@@ -32,4 +33,6 @@ urlpatterns = [
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/user/contact', ContactsView.as_view(), name='contacts'),
     path('api/user/contact/<int:pk>/', ContactDetailView.as_view(), name='contact'),
+    path('api/company/', CompanyAPIView.as_view(), name='company-list-create'),
+    path('api/company/<int:company_id>/', CompanyAPIView.as_view(), name='company-retrieve-update-delete'),
 ]

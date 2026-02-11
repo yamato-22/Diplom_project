@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from .models import User, Contact, Company, Category, Product, Property, ProductProperty, Order, OrderItem
 from django.utils.translation import gettext_lazy as _
@@ -62,6 +63,29 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'email': {'required': True, 'allow_blank': False},
             'password': {'write_only': True, 'required': True, 'allow_blank': False},
         }
+
+    def validate_password(self, value):
+        """
+        Проверка пароля на сложность
+        """
+
+        if len(value) < 8:
+            raise serializers.ValidationError("The password length must be at least 8 characters")
+
+        if not any(char.isdigit() for char in value):
+            raise serializers.ValidationError("The password must contain at least one digit")
+
+        if not any(char.isupper() for char in value):
+            raise serializers.ValidationError("The password must contain one uppercase letter")
+
+        if not any(char.islower() for char in value):
+            raise serializers.ValidationError("The password must contain one lowercase letter")
+
+        special_characters = r"[ !@#$%^&*()?/{}|~<>]"
+        if not re.search(special_characters, value):
+            raise serializers.ValidationError("The password must contain at least one special character")
+
+        return value
 
     def create(self, validated_data):
         # Используем переопределенный в менеджере пользователей метод create_user

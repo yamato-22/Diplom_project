@@ -133,7 +133,7 @@ class Company(models.Model):
     objects = models.Manager()
 
     name = models.CharField(max_length=100,
-                            verbose_name='Название компании')
+                            verbose_name='Название компании', unique=True)
     url = models.URLField(verbose_name='Ссылка на сайт компании',
                           null=True, blank=True)
     state_orders = models.BooleanField(verbose_name='Статус получения заказов',
