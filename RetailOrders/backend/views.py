@@ -7,9 +7,9 @@ from rest_framework.request import Request
 #from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Contact, Company
+from .models import Contact, Company, Product
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
-                          ContactSerializer, CompanySerializer)
+                          ContactSerializer, CompanySerializer, ProductSerializer)
 
 
 # Create your views here.
@@ -217,3 +217,27 @@ class CompanyAPIView(APIView):
         company.delete()
         return Response({"Message": f"Company  {company_name} successfully deleted"},
                         status=status.HTTP_204_NO_CONTENT)
+
+
+class ProductListCreateView(APIView):
+    """
+    Processes requests to receive all products and create new products.
+    """
+
+    def get(self, request):
+        """
+        Возвращает список всех товаров.
+        """
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """
+        Создаёт новый товар.
+        """
+        serializer = ProductSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

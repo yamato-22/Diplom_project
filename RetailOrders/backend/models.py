@@ -191,10 +191,14 @@ class Product(models.Model):
     objects = models.Manager()
     name = models.CharField(max_length=80, verbose_name='Название')
     description = models.CharField(max_length=150, verbose_name='Описание')
-    article = models.PositiveIntegerField(verbose_name='Артикул',
+    article = models.CharField(max_length=10, verbose_name='Артикул',
                                           unique=True, blank=False)
     quantity = models.PositiveIntegerField(verbose_name='Количество')
-    price = models.PositiveIntegerField(verbose_name='Цена')
+    price = models.DecimalField(max_digits=10, decimal_places=2,
+                                verbose_name='Цена')
+    price_rrc = models.DecimalField(max_digits=10, decimal_places=2,
+                                verbose_name='Рекомендуемая цена')
+
     category = models.ForeignKey(Category, verbose_name='Категория',
                                  related_name='products', blank=True,
                                  on_delete=models.CASCADE)

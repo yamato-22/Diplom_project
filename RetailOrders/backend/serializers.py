@@ -127,7 +127,17 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ('name', 'description', 'article', 'quantity', 'price', 'category', 'company')
+        fields = ('name', 'description', 'article', 'quantity', 'price', 'price_rrc', 'category', 'company')
+        extra_kwargs = {
+            'name': {'required': True, 'allow_blank': False},
+            'description': {'required': False, 'allow_blank': True},
+            'article': {'required': True, 'allow_blank': False},
+            'quantity': {'required': True},
+            'price': {'required': True},
+            'price_rrc': {'required': True},
+            'category': {'required': False},
+            'company': {'required': False},
+        }
 
 class PropertySerializer(serializers.ModelSerializer):
     class Meta:
