@@ -177,7 +177,7 @@ class Contact(models.Model):
 class Category(models.Model):
     objects = models.Manager()
     name = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
-    companies = models.ManyToManyField(Company, verbose_name='Компании', related_name='categories', blank=True)
+    #companies = models.ManyToManyField(Company, verbose_name='Компании', related_name='categories', blank=True)
 
     class Meta:
         verbose_name = 'Категория'

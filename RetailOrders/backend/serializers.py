@@ -122,8 +122,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
-    company = CompanySerializer(read_only=True)
+    # category = CategorySerializer(read_only=True)
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    # company = CompanySerializer(read_only=True)
+    company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all())
 
     class Meta:
         model = Product
@@ -135,8 +137,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'quantity': {'required': True},
             'price': {'required': True},
             'price_rrc': {'required': True},
-            'category': {'required': False},
-            'company': {'required': False},
+            'category': {'required': True},
+            'company': {'required': True},
         }
 
 class PropertySerializer(serializers.ModelSerializer):

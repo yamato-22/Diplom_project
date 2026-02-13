@@ -7,9 +7,9 @@ from rest_framework.request import Request
 #from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Contact, Company, Product
+from .models import Contact, Company, Product, Category
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
-                          ContactSerializer, CompanySerializer, ProductSerializer)
+                          ContactSerializer, CompanySerializer, ProductSerializer, CategorySerializer)
 
 
 # Create your views here.
@@ -218,6 +218,65 @@ class CompanyAPIView(APIView):
         return Response({"Message": f"Company  {company_name} successfully deleted"},
                         status=status.HTTP_204_NO_CONTENT)
 
+
+class CategoryAPIView(APIView):
+    """
+    View для CRUD операций с категориями товаров.
+    """
+
+    def get_category(self, category_id):
+        try:
+            return Category.objects.get(id=category_id)
+        except Category.DoesNotExist:
+            return None
+
+    def get(self, request, category_id=None):
+        """Получение одной категории или списка всех категорий."""
+
+        if category_id:
+            category = self.get_category(category_id)
+            if category is None:
+                return Response({"Category": f"Category id = {category_id} not found"},
+                                status=status.HTTP_404_NOT_FOUND)
+            serializer = CategorySerializer(category)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            categories = Category.objects.all()
+            serializer = CategorySerializer(categories, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        """Создание новой категории."""
+
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, category_id):
+        """Обновление существующей категории."""
+        category = self.get_category(category_id)
+        if category is None:
+            return Response({"Category": f"Category id = {category_id} not found"},
+                            status=status.HTTP_404_NOT_FOUND)
+        else:
+            serializer = CategorySerializer(category, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, category_id):
+        """Удаление категории."""
+        category = self.get_category(category_id)
+        if category is None:
+            return Response({"Category": f"Categoty id = {category_id} not found"},
+                            status=status.HTTP_404_NOT_FOUND)
+        category_name = category.name
+        category.delete()
+        return Response({"Message": f"Category  {category_name} successfully deleted"},
+                        status=status.HTTP_204_NO_CONTENT)
 
 class ProductListCreateView(APIView):
     """
