@@ -122,9 +122,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    # category = CategorySerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
-    # company = CompanySerializer(read_only=True)
     company = serializers.PrimaryKeyRelatedField(queryset=Company.objects.all())
 
     class Meta:
@@ -202,6 +200,12 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ('id', 'created_at', 'updated_at', 'status', 'total_amount','user')
+        read_only_fields = ('id',)
+
+class OrderCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ('id', 'status', 'total_amount')
         read_only_fields = ('id',)
 
 

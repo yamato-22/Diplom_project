@@ -257,7 +257,8 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="new")
-    total_amount = models.PositiveIntegerField(default=0)
+    total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0,
+                                verbose_name='Общая стоимость заказа')
     user = models.ForeignKey(User, verbose_name='Покупатель', related_name='user',
                     blank=True, on_delete=models.CASCADE)
 

@@ -8,11 +8,11 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Contact, Company, Product, Category, Property, ProductProperty
+from .models import Contact, Company, Product, Category, Property, ProductProperty, Order
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
                           ContactSerializer, CompanySerializer, ProductSerializer,
                           CategorySerializer, PropertySerializer, ProductPropertySerializer,
-                          ProductAllPropertySerializer)
+                          ProductAllPropertySerializer, OrderCreateSerializer, OrderSerializer)
 
 
 # Create your views here.
@@ -259,3 +259,33 @@ class ProductPropertyViewSet(ModelViewSet):
     queryset = ProductProperty.objects.all()
     serializer_class = ProductPropertySerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
+
+
+class OrderCreateView(generics.CreateAPIView):
+    """
+    Представление для создания новых заказов с автоматическим назначением пользователя и статуса.
+    """
+    queryset = Order.objects.all()
+    serializer_class = OrderCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        """
+        Устанавливаем текущего аутентифицированного пользователя в качестве покупателя
+        и устанавливаем статус заказа "new".
+        """
+        serializer.save(user=self.request.user, status="new", total_amount=0)
+
+class UserOrdersListView(generics.ListAPIView):
+    """
+    Возвращает список заказов, созданных текущим аутентифицированным пользователем.
+    """
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Фильтрует заказы по текущему пользователю.
+        """
+        user = self.request.user
+        return Order.objects.filter(user=user)

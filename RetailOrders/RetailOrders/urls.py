@@ -22,7 +22,8 @@ from rest_framework.routers import DefaultRouter
 
 from backend.views import (RegisterAccount, UserRetrieveUpdate, ChangeUserPasswordView, ContactsView,
                            ContactDetailView, CompanyAPIView, ProductViewSet, CategoryViewSet,
-                           PropertyViewSet,  ProductPropertyViewSet, ProductDetailView)
+                           PropertyViewSet,  ProductPropertyViewSet, ProductDetailView, OrderCreateView,
+                           UserOrdersListView)
 
 # Создаем экземпляр роутера
 router = DefaultRouter()
@@ -47,9 +48,12 @@ urlpatterns = [
     path('api/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/user/contact', ContactsView.as_view(), name='contacts'),
     path('api/user/contact/<int:pk>/', ContactDetailView.as_view(), name='contact'),
+    path('api/user/orders/', UserOrdersListView.as_view(), name='user-orders'),
     path('api/company/', CompanyAPIView.as_view(), name='company-list-create'),
     path('api/company/<int:company_id>/', CompanyAPIView.as_view(), name='company-get-update-delete'),
     path('api/productdetail/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
+    path('api/orders/create/', OrderCreateView.as_view(), name='order-create'),
+
 ]
 
 # Включаем маршруты из роутера
