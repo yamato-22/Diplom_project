@@ -17,11 +17,25 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.routers import DefaultRouter
 
-# from backend.views import RegisterAccount
 
 from backend.views import (RegisterAccount, UserRetrieveUpdate, ChangeUserPasswordView, ContactsView,
-                           ContactDetailView, CompanyAPIView, ProductListCreateView, CategoryAPIView)
+                           ContactDetailView, CompanyAPIView, ProductViewSet, CategoryViewSet,
+                           PropertyViewSet,  ProductPropertyViewSet, ProductDetailView)
+
+# Создаем экземпляр роутера
+router = DefaultRouter()
+
+# Регистрируем ViewSet
+router.register(r'api/property', PropertyViewSet, basename='Property-List-Create')
+router.register(r'api/property/<int:pk>', PropertyViewSet, basename='Property-Retrieve-Update')
+router.register(r'api/category', CategoryViewSet, basename='Category-List-Create')
+router.register(r'api/category/<int:pk>', CategoryViewSet, basename='Category-Retrieve-Update')
+router.register(r'api/product', ProductViewSet, basename='Product-List-Create')
+router.register(r'api/product/<int:pk>', ProductViewSet, basename='Product-R-U-D')
+router.register(r'api/product_property', ProductPropertyViewSet, basename='ProductProperty-List-Create')
+router.register(r'api/product_property/<int:pk>', ProductPropertyViewSet, basename='ProductProperty-R-U-D')
 
 
 urlpatterns = [
@@ -35,7 +49,8 @@ urlpatterns = [
     path('api/user/contact/<int:pk>/', ContactDetailView.as_view(), name='contact'),
     path('api/company/', CompanyAPIView.as_view(), name='company-list-create'),
     path('api/company/<int:company_id>/', CompanyAPIView.as_view(), name='company-get-update-delete'),
-    path('api/category/', CategoryAPIView.as_view(), name='category-list-create'),
-    path('api/category/<int:category_id>/', CategoryAPIView.as_view(), name='category-get-update-delete'),
-    path('api/product/', ProductListCreateView.as_view(), name='product-list-create'),
+    path('api/productdetail/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
 ]
+
+# Включаем маршруты из роутера
+urlpatterns += router.urls

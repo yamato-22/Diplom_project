@@ -1,15 +1,18 @@
 #from django.shortcuts import render
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.viewsets import ModelViewSet
 from django.http import JsonResponse
 from rest_framework import status
+from rest_framework import generics
 from rest_framework.request import Request
-#from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Contact, Company, Product, Category
+from .models import Contact, Company, Product, Category, Property, ProductProperty
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
-                          ContactSerializer, CompanySerializer, ProductSerializer, CategorySerializer)
+                          ContactSerializer, CompanySerializer, ProductSerializer,
+                          CategorySerializer, PropertySerializer, ProductPropertySerializer,
+                          ProductAllPropertySerializer)
 
 
 # Create your views here.
@@ -218,85 +221,41 @@ class CompanyAPIView(APIView):
         return Response({"Message": f"Company  {company_name} successfully deleted"},
                         status=status.HTTP_204_NO_CONTENT)
 
-
-class CategoryAPIView(APIView):
+class CategoryViewSet(ModelViewSet):
     """
-    View для CRUD операций с категориями товаров.
+    ViewSet for CRUD operations with product categories.
     """
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    http_method_names = ['get', 'post', 'patch']
 
-    def get_category(self, category_id):
-        try:
-            return Category.objects.get(id=category_id)
-        except Category.DoesNotExist:
-            return None
-
-    def get(self, request, category_id=None):
-        """Получение одной категории или списка всех категорий."""
-
-        if category_id:
-            category = self.get_category(category_id)
-            if category is None:
-                return Response({"Category": f"Category id = {category_id} not found"},
-                                status=status.HTTP_404_NOT_FOUND)
-            serializer = CategorySerializer(category)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            categories = Category.objects.all()
-            serializer = CategorySerializer(categories, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        """Создание новой категории."""
-
-        serializer = CategorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, category_id):
-        """Обновление существующей категории."""
-        category = self.get_category(category_id)
-        if category is None:
-            return Response({"Category": f"Category id = {category_id} not found"},
-                            status=status.HTTP_404_NOT_FOUND)
-        else:
-            serializer = CategorySerializer(category, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, category_id):
-        """Удаление категории."""
-        category = self.get_category(category_id)
-        if category is None:
-            return Response({"Category": f"Categoty id = {category_id} not found"},
-                            status=status.HTTP_404_NOT_FOUND)
-        category_name = category.name
-        category.delete()
-        return Response({"Message": f"Category  {category_name} successfully deleted"},
-                        status=status.HTTP_204_NO_CONTENT)
-
-class ProductListCreateView(APIView):
+class ProductViewSet(ModelViewSet):
     """
-    Processes requests to receive all products and create new products.
+    ViewSet for CRUD operations with product.
     """
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
 
-    def get(self, request):
-        """
-        Возвращает список всех товаров.
-        """
-        products = Product.objects.all()
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+class ProductDetailView(generics.RetrieveAPIView):
+    """
+    Вид для получения детальной информации о продукте и его характеристиках.
+    """
+    queryset = Product.objects.all()  # Все доступные продукты
+    serializer_class = ProductAllPropertySerializer  # Используемый сериализатор
 
-    def post(self, request):
-        """
-        Создаёт новый товар.
-        """
-        serializer = ProductSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class PropertyViewSet(ModelViewSet):
+    """
+    ViewSet for CRUD operations with property of product.
+    """
+    queryset = Property.objects.all()
+    serializer_class = PropertySerializer
+    http_method_names = ['get', 'post', 'patch']
+
+class ProductPropertyViewSet(ModelViewSet):
+    """
+    ViewSet for CRUD operations with property of product.
+    """
+    queryset = ProductProperty.objects.all()
+    serializer_class = ProductPropertySerializer
+    http_method_names = ['get', 'post', 'patch', 'delete']

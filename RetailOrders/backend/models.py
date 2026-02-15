@@ -182,7 +182,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = "Список категорий"
-        ordering = ('-name',)
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -216,8 +216,8 @@ class Product(models.Model):
 
 class Property(models.Model):
     objects = models.Manager()
-    name = models.CharField(max_length=30, verbose_name="Название", blank=False)
-    value = models.CharField(max_length=10, verbose_name="Единица измерения", blank=True)
+    name = models.CharField(max_length=50, verbose_name="Название", blank=False)
+    value = models.CharField(max_length=30, verbose_name="Единица измерения", blank=True)
 
     class Meta:
         verbose_name = 'Характеристика'
@@ -225,7 +225,7 @@ class Property(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['name', 'value'], name='unique_property'),
         ]
-        ordering = ('-name',)
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -234,12 +234,12 @@ class Property(models.Model):
 class ProductProperty(models.Model):
     objects = models.Manager()
     quantity = models.CharField(max_length=50,
-                                verbose_name="Значение параметра", blank=True)
+                                verbose_name="Значение параметра", blank=False)
     property = models.ForeignKey(Property, verbose_name="Характеристика",
-                                 related_name='properties', blank=True,
+                                 related_name='properties', blank=False,
                                  on_delete=models.CASCADE)
     product = models.ForeignKey(Product, verbose_name='Продукт',
-                                 related_name='products', blank=True,
+                                 related_name='products', blank=False,
                                  on_delete=models.CASCADE)
 
     class Meta:

@@ -129,7 +129,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ('name', 'description', 'article', 'quantity', 'price', 'price_rrc', 'category', 'company')
+        fields = ('id', 'name', 'description', 'article', 'quantity', 'price', 'price_rrc', 'category', 'company')
+        read_only_fields = ('id',)
         extra_kwargs = {
             'name': {'required': True, 'allow_blank': False},
             'description': {'required': False, 'allow_blank': True},
@@ -144,16 +145,57 @@ class ProductSerializer(serializers.ModelSerializer):
 class PropertySerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
-        fields = ('name', 'value')
+        fields = ('id', 'name', 'value')
+        read_only_fields = ('id',)
+
 
 
 class ProductPropertySerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True)
-    property = PropertySerializer(read_only=True)
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    property = serializers.PrimaryKeyRelatedField(queryset=Property.objects.all())
+
     class Meta:
         model = ProductProperty
-        fields = ('product', 'property', 'quantity')
+        fields = ('id', 'product', 'property', 'quantity')
+        read_only_fields = ('id',)
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['product_name'] = instance.product.name
+        representation['property_name'] = instance.property.name
+        return representation
+
+class PropertyNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Property
+        fields = ('name',)
+        read_only_fields = ('name',)
+
+class ProductPropertySetSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для набора характеристик продукта.
+    """
+    name = serializers.CharField(source='property.name', read_only=True)
+
+    class Meta:
+        model = ProductProperty
+        fields = ('name', 'quantity')
+
+class ProductAllPropertySerializer(serializers.ModelSerializer):
+    """
+    Главный сериализатор для модели продукта, содержащий вложенный сериализатор характеристик.
+    """
+    company = serializers.CharField(source='company.name', read_only=True)
+    category = serializers.CharField(source='category.name', read_only=True)
+    properties = ProductPropertySetSerializer(source='products', many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = (
+            'id', 'name', 'description', 'article', 'quantity', 'price', 'price_rrc',
+            'category', 'company', 'properties',
+        )
+        read_only_fields = ('id',)
 
 class OrderSerializer(serializers.ModelSerializer):
     user = UserSerializer(write_only=True)
@@ -169,4 +211,4 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ('id', 'order', 'product', 'quantity', 'total_cost')
-        read_only_fields = ('id')
+        read_only_fields = ('id',)
