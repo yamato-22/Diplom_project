@@ -8,6 +8,7 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .services import add_product_to_order
 from .models import Contact, Company, Product, Category, Property, ProductProperty, Order
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
                           ContactSerializer, CompanySerializer, ProductSerializer,
@@ -289,3 +290,26 @@ class UserOrdersListView(generics.ListAPIView):
         """
         user = self.request.user
         return Order.objects.filter(user=user)
+
+class AddProductToOrderAPIView(APIView):
+    """
+    Добавление товара в заказ.
+    """
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        order_id = request.data.get('order_id')  # Получить id заказа из тела запроса
+        product_id = request.data.get('product_id')  # Получить id продукта из тела запроса
+
+        try:
+            quantity = round(float(request.data.get('quantity')))
+        except ValueError as e:
+            return Response({'error': f'Invalid value for quantity: {request.data.get("quantity")}'}, status=400)
+
+        # Получить количество из тела запроса
+        user_id = request.user.id
+
+        try:
+            add_product_to_order(user_id, order_id, product_id, quantity)
+            return Response({'message': 'Товар успешно добавлен в заказ.'}, status=201)
+        except Exception as e:
+            return Response({'Error': str(e)}, status=400)
