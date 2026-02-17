@@ -15,12 +15,12 @@ def add_product_to_order(user_id, order_id, product_id, quantity):
     """
     try:
         # Получаем объект заказа
-        order = Order.objects.get(id=order_id)
+        order = Order.objects.select_related('user').get(id=order_id)
         if order.user_id != user_id:
             raise PermissionDenied("This order belongs to another user")
 
         # Получаем продукт
-        product = Product.objects.get(id=product_id)
+        product = Product.objects.select_for_update().get(id=product_id)
 
         if not isinstance(quantity, int) or quantity <= 0:
             raise ValidationError("Incorrect quantity value")
@@ -28,6 +28,10 @@ def add_product_to_order(user_id, order_id, product_id, quantity):
         # Проверяем доступность товаров на складе
         if product.quantity < quantity:
             raise ValidationError(f"The product '{product.name}' insufficient quantity in stock")
+
+        # Уменьшаем количество товара на складе
+        product.quantity -= quantity
+        product.save()
 
         # Проверяем, существует ли уже этот продукт в заказе
         existing_item = None
@@ -39,10 +43,12 @@ def add_product_to_order(user_id, order_id, product_id, quantity):
         if existing_item:
             # Если элемент уже существует, увеличиваем его количество
             new_quantity = existing_item.quantity + quantity
+            new_total_cost = product.price * new_quantity
             existing_item.quantity = new_quantity
+            existing_item.total_cost = new_total_cost
             existing_item.save()
         else:
-            # Иначе создаем новый элемент заказа
+            # Cоздаем новый элемент заказа
             item_total_cost = product.price * quantity
             OrderItem.objects.create(
                 order=order,
@@ -55,9 +61,9 @@ def add_product_to_order(user_id, order_id, product_id, quantity):
         calculate_and_update_total_amount(order)
 
     except Order.DoesNotExist:
-        raise ValidationError('Заказ не найден.')
+        raise ValidationError('Order not found')
     except Product.DoesNotExist:
-        raise ValidationError('Продукт не найден.')
+        raise ValidationError('Product not found')
 
 
 def calculate_and_update_total_amount(order):
