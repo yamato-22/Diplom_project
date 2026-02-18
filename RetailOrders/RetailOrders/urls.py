@@ -23,7 +23,7 @@ from rest_framework.routers import DefaultRouter
 from backend.views import (RegisterAccount, UserRetrieveUpdate, ChangeUserPasswordView, ContactsView,
                            ContactDetailView, CompanyAPIView, ProductViewSet, CategoryViewSet,
                            PropertyViewSet,  ProductPropertyViewSet, ProductDetailView, OrderCreateView,
-                           UserOrdersListView,  AddProductToOrderAPIView)
+                           UserOrdersListView,  AddDeleteItemOrderAPIView)
 
 # Создаем экземпляр роутера
 router = DefaultRouter()
@@ -53,7 +53,9 @@ urlpatterns = [
     path('api/company/<int:company_id>/', CompanyAPIView.as_view(), name='company-get-update-delete'),
     path('api/productdetail/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
     path('api/orders/create/', OrderCreateView.as_view(), name='order-create'),
-    path('api/orders/add-product/', AddProductToOrderAPIView.as_view(), name='add_product_to_order'),
+    path('api/orders/add-product/', AddDeleteItemOrderAPIView.as_view(), name='add_product_to_order'),
+    path('api/orders/remove-product/<int:product_id>/', AddDeleteItemOrderAPIView.as_view(),
+         name='remove Product from Order'),
 
 ]
 

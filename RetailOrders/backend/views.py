@@ -8,7 +8,7 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services import add_product_to_order
+from .services import add_product_to_order, remove_product_from_order
 from .models import Contact, Company, Product, Category, Property, ProductProperty, Order
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
                           ContactSerializer, CompanySerializer, ProductSerializer,
@@ -291,12 +291,13 @@ class UserOrdersListView(generics.ListAPIView):
         user = self.request.user
         return Order.objects.filter(user=user)
 
-class AddProductToOrderAPIView(APIView):
-    """
-    Добавление товара в заказ.
-    """
+class AddDeleteItemOrderAPIView(APIView):
+
     permission_classes = [IsAuthenticated]
     def post(self, request):
+        """
+        Добавление товара в заказ.
+        """
         order_id = request.data.get('order_id')  # Получить id заказа из тела запроса
         product_id = request.data.get('product_id')  # Получить id продукта из тела запроса
 
@@ -305,11 +306,19 @@ class AddProductToOrderAPIView(APIView):
         except ValueError as e:
             return Response({'error': f'Invalid value for quantity: {request.data.get("quantity")}'}, status=400)
 
-        # Получить количество из тела запроса
         user_id = request.user.id
 
         try:
             add_product_to_order(user_id, order_id, product_id, quantity)
             return Response({'message': 'Товар успешно добавлен в заказ.'}, status=201)
+        except Exception as e:
+            return Response({'Error': str(e)}, status=400)
+
+    def delete(self, request, product_id):
+        order_id = request.data.get('order_id')  # Получить id заказа из тела запроса
+        user_id = request.user.id
+        try:
+            remove_product_from_order(user_id, order_id, product_id)
+            return Response({'message': 'Товар успешно удален из заказа'}, status=201)
         except Exception as e:
             return Response({'Error': str(e)}, status=400)

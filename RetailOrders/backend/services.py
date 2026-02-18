@@ -1,6 +1,6 @@
 from django.db import transaction
 from rest_framework.exceptions import ValidationError, PermissionDenied
-from .models import  Order, OrderItem, Product
+from .models import Order, OrderItem, Product, STATUS_CHOICES
 
 
 @transaction.atomic
@@ -16,8 +16,12 @@ def add_product_to_order(user_id, order_id, product_id, quantity):
     try:
         # Получаем объект заказа
         order = Order.objects.select_related('user').get(id=order_id)
+
         if order.user_id != user_id:
-            raise PermissionDenied("This order belongs to another user")
+            raise PermissionDenied("You don't own this order")
+
+        if order.status != STATUS_CHOICES[0][0]:
+            raise ValidationError(f"Order {order.pk} have NOT CHANGE status {order.status} ")
 
         # Получаем продукт
         product = Product.objects.select_for_update().get(id=product_id)
@@ -43,9 +47,7 @@ def add_product_to_order(user_id, order_id, product_id, quantity):
         if existing_item:
             # Если элемент уже существует, увеличиваем его количество
             new_quantity = existing_item.quantity + quantity
-            new_total_cost = product.price * new_quantity
             existing_item.quantity = new_quantity
-            existing_item.total_cost = new_total_cost
             existing_item.save()
         else:
             # Cоздаем новый элемент заказа
@@ -64,6 +66,47 @@ def add_product_to_order(user_id, order_id, product_id, quantity):
         raise ValidationError('Order not found')
     except Product.DoesNotExist:
         raise ValidationError('Product not found')
+
+@transaction.atomic
+def remove_product_from_order(user_id, order_id, product_id):
+    """
+    Удаляет товар из заказа и возвращает его количество на склад.
+
+    :param user_id: ID пользователя, инициирующего удаление
+    :param order_id: ID заказа
+    :param product_id: ID товара, подлежащего удалению
+    """
+    try:
+        # Получаем объект заказа
+        order = Order.objects.select_related('user').get(id=order_id)
+        if order.user_id != user_id:
+            raise PermissionDenied("You don't own this order.")
+
+        if order.status != STATUS_CHOICES[0][0]:
+            raise ValidationError(f"Order {order.pk} have NOT CHANGE status {order.status} ")
+
+        # Получаем товар
+        product = Product.objects.select_for_update().get(id=product_id)
+
+        # Получаем элемент заказа, связанный с этим товаром
+        item = OrderItem.objects.get(order=order, product=product)
+
+        # Возврат товара на склад
+        product.quantity += item.quantity
+        product.save()
+
+        # Удаляем элемент заказа
+        item.delete()
+
+        # Пересчёт общей стоимости заказа
+        calculate_and_update_total_amount(order)
+
+    except Order.DoesNotExist:
+        raise ValidationError('Order not found.')
+    except Product.DoesNotExist:
+        raise ValidationError('Product not found.')
+    except OrderItem.DoesNotExist:
+        raise ValidationError('Product is not present in the order')
 
 
 def calculate_and_update_total_amount(order):
