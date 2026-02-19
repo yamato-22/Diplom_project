@@ -85,10 +85,7 @@ def remove_product_from_order(user_id, order_id, product_id):
         if order.status != STATUS_CHOICES[0][0]:
             raise ValidationError(f"Order {order.pk} have NOT CHANGE status {order.status} ")
 
-        # Получаем товар
         product = Product.objects.select_for_update().get(id=product_id)
-
-        # Получаем элемент заказа, связанный с этим товаром
         item = OrderItem.objects.get(order=order, product=product)
 
         # Возврат товара на склад

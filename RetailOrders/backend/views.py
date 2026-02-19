@@ -13,7 +13,8 @@ from .models import Contact, Company, Product, Category, Property, ProductProper
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
                           ContactSerializer, CompanySerializer, ProductSerializer,
                           CategorySerializer, PropertySerializer, ProductPropertySerializer,
-                          ProductAllPropertySerializer, OrderCreateSerializer, OrderSerializer)
+                          ProductAllPropertySerializer, OrderCreateSerializer, OrderSerializer,
+                          OrderDetailSerializer)
 
 
 # Create your views here.
@@ -294,6 +295,7 @@ class UserOrdersListView(generics.ListAPIView):
 class AddDeleteItemOrderAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         """
         Добавление товара в заказ.
@@ -322,3 +324,23 @@ class AddDeleteItemOrderAPIView(APIView):
             return Response({'message': 'Товар успешно удален из заказа'}, status=201)
         except Exception as e:
             return Response({'Error': str(e)}, status=400)
+
+class OrderDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, order_id):
+
+        try:
+            # Получаем заказ по заданному ID
+            order = Order.objects.prefetch_related("order").get(pk=order_id)
+        except Order.DoesNotExist:
+            return Response({"Error": "Order NOT found"}, status=status.HTTP_404_NOT_FOUND)
+        user = request.user
+
+        if order.user_id != user.id:
+            return Response({"Error": "You don't own this order"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Сериализуем заказ и его элементы
+        serializer = OrderDetailSerializer(order)
+
+        # Возвращаем сериализованную версию заказа
+        return Response(serializer.data, status=status.HTTP_200_OK)
