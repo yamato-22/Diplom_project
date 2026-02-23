@@ -10,7 +10,7 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services import add_product_to_order, remove_product_from_order, load_data_from_yaml
+from .services import add_product_to_order, remove_product_from_order, load_data_from_yaml, set_confirm_order_user
 from .models import Contact, Company, Product, Category, Property, ProductProperty, Order
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
                           ContactSerializer, CompanySerializer, ProductSerializer,
@@ -330,6 +330,23 @@ class AddDeleteItemOrderAPIView(APIView):
             return Response({'message': 'Товар успешно удален из заказа'}, status=201)
         except Exception as e:
             return Response({'Error': str(e)}, status=400)
+
+class ConfirmOrderUserAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, order_id):
+        """
+        Устанавливаем статус подтверждения заказа пользователем
+        """
+        user_id = request.user.id
+
+        try:
+            set_confirm_order_user(user_id, order_id)
+            return Response({'Мessage': 'Статус заказа изменен на Подтвержден'}, status=201)
+        except Exception as e:
+            return Response({'Error': str(e)}, status=400)
+
+
 
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]

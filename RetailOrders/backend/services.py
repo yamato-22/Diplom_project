@@ -115,6 +115,26 @@ def calculate_and_update_total_amount(order):
     order.total_amount = total_sum
     order.save()
 
+@transaction.atomic
+def set_confirm_order_user(user_id, order_id):
+    try:
+        order = Order.objects.select_related('user').get(id=order_id)
+
+    except Order.DoesNotExist:
+        raise ValidationError('Order not found.')
+
+    if order.user_id != user_id:
+        raise PermissionDenied("You don't own this order")
+
+    if order.status != STATUS_CHOICES[0][0]:
+        raise ValidationError(f"Order {order.pk} have NOT CHANGE status {order.status} ")
+
+    order.status = STATUS_CHOICES[1][0]
+    order.save()
+
+
+
+
 def load_data_from_yaml(yaml_file, user):
     """
     Первоначальная загрузка данных из yaml файла
