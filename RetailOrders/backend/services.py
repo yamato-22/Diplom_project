@@ -1,6 +1,8 @@
 from django.db import transaction
+from django.apps import apps
 from rest_framework.exceptions import ValidationError, PermissionDenied
-from .models import Order, OrderItem, Product, STATUS_CHOICES
+import yaml
+from .models import Order, OrderItem, Product, Property, ProductProperty, Company, Category, STATUS_CHOICES
 
 
 @transaction.atomic
@@ -112,3 +114,103 @@ def calculate_and_update_total_amount(order):
     total_sum = sum(item.total_cost for item in items)
     order.total_amount = total_sum
     order.save()
+
+def load_data_from_yaml(yaml_file, user):
+    """
+    Первоначальная загрузка данных из yaml файла
+    :param yaml_file: shop.yaml
+    :return: Словарь с результатами загрузки
+    """
+    data = yaml.safe_load(yaml_file)
+
+    # Результаты загрузки будем хранить в словаре
+    results = {'created_objects': [], 'errors': []}
+
+    shop_data = data.get('shop', None)
+    categories_data = data.get('categories', [])
+    products_data = data.get('goods', [])
+
+    # Создание компании (если магазин указан)
+    if shop_data:
+        company_obj, created = Company.objects.get_or_create(name=shop_data, defaults={'owner': user})
+        if created:
+            # Объект успешно создан
+            results['created_objects'].append(f"Создана компания '{company_obj.name}'")
+            print(user)
+        else:
+            # Если объект уже существует, проверяем владельца
+            if company_obj.owner != user:
+                raise PermissionDenied("Вы не можете редактировать компанию другого пользователя.")
+
+    # Создание категорий
+    for category in categories_data:
+        category_id = category.get('id')
+        category_name = category.get('name')
+        category, _ = Category.objects.get_or_create(id=category_id, defaults={'name': category_name})
+        results['created_objects'].append(f"Создана категория '{category.name}'")
+
+    # Создание товаров и свойств товаров
+    for product in products_data:
+        product_id = product.get('id')
+        category_id = product.get('category')
+        name = product.get('name')
+        model = product.get('model')
+        price = product.get('price')
+        price_rrc = product.get('price_rrc')
+        quantity = product.get('quantity')
+        params = product.get('parameters', {})
+
+        # Создаем продукт
+        try:
+            category_obj = Category.objects.get(pk=category_id)
+            product, _ = Product.objects.update_or_create(
+                pk=product_id,
+                defaults={
+                    'name': name,
+                    'model': model,
+                    'description': '',  # Описание пустое, можем заполнить позже
+                    'article': product_id,
+                    'quantity': quantity,
+                    'price': price,
+                    'price_rrc': price_rrc,
+                    'category': category_obj,
+                    'company': company_obj
+                }
+            )
+            results['created_objects'].append(f"Создан товар '{product.name}'")
+
+            # Добавляем свойства товара
+            for param_key, param_value in params.items():
+                prop, _ = Property.objects.get_or_create(name=param_key)
+
+                # Сохраняем значение свойства для текущего товара
+                ProductProperty.objects.create(product=product, property=prop, quantity=str(param_value))
+                results['created_objects'].append(
+                    f"Добавлено свойство '{prop.name}' со значением '{param_value}' для товара '{product.name}'")
+        except Exception as e:
+            results['errors'].append(f"Произошла ошибка при обработке товара ID={product_id}: {e}")
+
+    return results
+
+
+def clean_database_with_orm(app_label=None, exclude_models=[]):
+    """
+    Функция очищает все таблицы указанной группы приложений или всей базы данных используя ORM.
+    Пример использования:
+    clean_database_with_orm('your_app_label') - Очищает все таблицы указанного приложения
+    clean_database_with_orm(exclude_models=['User'])  - Очищает всю базу данных, кроме модели User
+
+    """
+    with transaction.atomic():
+        all_models = []
+        if app_label:
+            app_config = apps.get_app_config(app_label)
+            all_models.extend(app_config.get_models())
+        else:
+            all_models = apps.get_models()
+
+        target_models = [model for model in all_models if model.__name__ not in exclude_models]
+
+        for model in target_models:
+            # Массивное удаление всех записей данной модели
+            model.objects.all().delete()

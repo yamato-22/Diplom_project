@@ -9,9 +9,6 @@ class CompanySerializer(serializers.ModelSerializer):
         model = Company
         fields = ('id', 'name', 'url', 'state_orders', 'owner',)
         read_only_fields = ('id',)
-        extra_kwargs = {
-            'owner': {'write_only': True}
-        }
 
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
@@ -127,10 +124,12 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ('id', 'name', 'description', 'article', 'quantity', 'price', 'price_rrc', 'category', 'company')
+        fields = ('id', 'name', 'model', 'description', 'article', 'quantity', 'price',
+                  'price_rrc', 'category', 'company')
         read_only_fields = ('id',)
         extra_kwargs = {
             'name': {'required': True, 'allow_blank': False},
+            'model': {'required': False, 'allow_blank': True},
             'description': {'required': False, 'allow_blank': True},
             'article': {'required': True, 'allow_blank': False},
             'quantity': {'required': True},

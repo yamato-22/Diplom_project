@@ -1,4 +1,6 @@
 #from django.shortcuts import render
+from io import BytesIO
+from rest_framework.parsers import MultiPartParser
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
@@ -8,7 +10,7 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services import add_product_to_order, remove_product_from_order
+from .services import add_product_to_order, remove_product_from_order, load_data_from_yaml
 from .models import Contact, Company, Product, Category, Property, ProductProperty, Order
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
                           ContactSerializer, CompanySerializer, ProductSerializer,
@@ -218,6 +220,10 @@ class CompanyAPIView(APIView):
         if company is None:
             return Response({"Company": f"Company id = {company_id} not found"},
                             status=status.HTTP_404_NOT_FOUND)
+        # Проверяем, является ли текущий пользователь владельцем компании
+        if company.owner != request.user:
+            return Response({"Message": 'You are not the owner of this company'},
+                            status=status.HTTP_403_FORBIDDEN)
         company_name = company.name
         company.delete()
         return Response({"Message": f"Company  {company_name} successfully deleted"},
@@ -334,8 +340,8 @@ class OrderDetailView(APIView):
             order = Order.objects.prefetch_related("order").get(pk=order_id)
         except Order.DoesNotExist:
             return Response({"Error": "Order NOT found"}, status=status.HTTP_404_NOT_FOUND)
-        user = request.user
 
+        user = request.user
         if order.user_id != user.id:
             return Response({"Error": "You don't own this order"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -344,3 +350,25 @@ class OrderDetailView(APIView):
 
         # Возвращаем сериализованную версию заказа
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UploadYamlFileView(APIView):
+    """
+    Представление для загрузки данных магазина и товаров из YAML-файла.
+    """
+    permission_classes = [IsAuthenticated]  # Требуется аутентификация
+    parser_classes = [MultiPartParser]  # Необходимый парсер для обработки multipart-загрузки
+
+    def post(self, request, format=None):
+        uploaded_file = request.FILES.get('shop.yaml')
+        if not uploaded_file:
+            return Response({'Error': 'File shop.yaml has not been sent '}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Переводим полученный файл в строку и загружаем данные
+            yaml_data = uploaded_file.read()
+            user = request.user
+            result = load_data_from_yaml(yaml_data, user)
+            return Response(result, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({'Error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,13 +1,9 @@
-
-
 from django.db import models
 # from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, AbstractUser, BaseUserManager, PermissionsMixin
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
-
-# Create your models here.
 
 ROLE_CHOICES = (
     ('supplier', 'Поставщик'),
@@ -31,7 +27,7 @@ class UserManager(BaseUserManager):
     """
     def create_user(self, username, email, password=None, **extra_fields):
         """
-        Создаем стандартного  позователся с логином и паролем
+        Создаем стандартного пользователя с логином и паролем
         :param username:
         :param email:
         :param password:
@@ -51,7 +47,7 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, username, email, password, **extra_fields):
         """
-        Создаем пользователя с полномочиями адммминистратора
+        Создаем пользователя с полномочиями администратора
         :param username:
         :param email:
         :param password:
@@ -177,7 +173,6 @@ class Contact(models.Model):
 class Category(models.Model):
     objects = models.Manager()
     name = models.CharField(max_length=50, verbose_name='Название категории', unique=True)
-    #companies = models.ManyToManyField(Company, verbose_name='Компании', related_name='categories', blank=True)
 
     class Meta:
         verbose_name = 'Категория'
@@ -190,6 +185,7 @@ class Category(models.Model):
 class Product(models.Model):
     objects = models.Manager()
     name = models.CharField(max_length=80, verbose_name='Название')
+    model = models.CharField(max_length=80, verbose_name='Модель', blank=True)
     description = models.CharField(max_length=150, verbose_name='Описание')
     article = models.CharField(max_length=10, verbose_name='Артикул',
                                           unique=True, blank=False)
