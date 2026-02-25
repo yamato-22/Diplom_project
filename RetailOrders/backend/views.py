@@ -1,5 +1,3 @@
-#from django.shortcuts import render
-from io import BytesIO
 from rest_framework.parsers import MultiPartParser
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -341,12 +339,20 @@ class ConfirmOrderUserAPIView(APIView):
         user_id = request.user.id
 
         try:
-            set_confirm_order_user(user_id, order_id)
-            return Response({'Мessage': 'Статус заказа изменен на Подтвержден'}, status=201)
+            # Запускаем процедуру подтверждения заказа
+            confirmed_order = set_confirm_order_user(user_id, order_id)
+
+            # Возвращаем информацию о подтверждённом заказе
+            return Response({
+                'Message': 'Статус заказа изменён на Подтвержден',
+                'Order': {
+                    'ID': confirmed_order.id,
+                    'Status': confirmed_order.status
+                }
+            }, status=status.HTTP_200_OK)
+
         except Exception as e:
-            return Response({'Error': str(e)}, status=400)
-
-
+            return Response({'Error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]

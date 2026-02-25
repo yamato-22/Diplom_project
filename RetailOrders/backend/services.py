@@ -117,20 +117,46 @@ def calculate_and_update_total_amount(order):
 
 @transaction.atomic
 def set_confirm_order_user(user_id, order_id):
+    """
+    Подтверждение пользователем своего заказа,
+    после подтверждения заказ отправляется Поставщику,
+    пользователь не может редактировать заказ.
+    :param user_id:
+    :param order_id:
+    :return:
+    """
     try:
         order = Order.objects.select_related('user').get(id=order_id)
+
+        if order.user_id != user_id:
+            raise PermissionDenied("You don't own this order")
+
+        if order.status != STATUS_CHOICES[0][0]:
+            raise ValidationError(f"Order {order.pk} have NOT CHANGE status {order.status} ")
+
+        if check_order_supplier_unique(order):
+            order.status = STATUS_CHOICES[1][0]
+            order.save()
+            return order
+        else:
+            raise ValidationError("All products in the order must belong to the same supplier.")
 
     except Order.DoesNotExist:
         raise ValidationError('Order not found.')
 
-    if order.user_id != user_id:
-        raise PermissionDenied("You don't own this order")
 
-    if order.status != STATUS_CHOICES[0][0]:
-        raise ValidationError(f"Order {order.pk} have NOT CHANGE status {order.status} ")
 
-    order.status = STATUS_CHOICES[1][0]
-    order.save()
+def check_order_supplier_unique(order):
+    """
+    Проверка заказа на принадлежность товаров к одному поставщику
+    :param order:
+    :return:
+    """
+    suppliers_ids = set(order.orderitem_set.values_list('product__company_id', flat=True))
+
+    if len(suppliers_ids) > 1:
+        return False
+    return True
 
 
 
