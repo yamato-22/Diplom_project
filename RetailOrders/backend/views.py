@@ -8,7 +8,8 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services import add_product_to_order, remove_product_from_order, load_data_from_yaml, set_confirm_order_user
+from .services import (add_product_to_order, remove_product_from_order, load_data_from_yaml, set_confirm_order_user,
+                       change_status_order_supplier)
 from .models import Contact, Company, Product, Category, Property, ProductProperty, Order
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
                           ContactSerializer, CompanySerializer, ProductSerializer,
@@ -373,6 +374,31 @@ class OrderDetailView(APIView):
 
         # Возвращаем сериализованную версию заказа
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class ChangeStatusOrderSupplierAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, order_id):
+        """
+        Устанавливаем статус заказа поставщиком в зависимости от состояния
+        """
+        supplier = request.user
+        new_status = request.data.get('order_status')
+
+        try:
+            new_order = change_status_order_supplier(supplier, order_id, new_status)
+
+           # Возвращаем информацию о подтверждённом заказе
+            return Response({
+                'Message': 'Статус заказа изменён',
+                'Order': {
+                    'ID': new_order.id,
+                    'Status': new_order.status
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'Error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UploadYamlFileView(APIView):

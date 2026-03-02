@@ -24,7 +24,7 @@ from backend.views import (RegisterAccount, UserRetrieveUpdate, ChangeUserPasswo
                            ContactDetailView, CompanyAPIView, ProductViewSet, CategoryViewSet,
                            PropertyViewSet,  ProductPropertyViewSet, ProductDetailView, OrderCreateView,
                            UserOrdersListView,  AddDeleteItemOrderAPIView, OrderDetailView, UploadYamlFileView,
-                           ConfirmOrderUserAPIView,)
+                           ConfirmOrderUserAPIView, ChangeStatusOrderSupplierAPIView)
 
 # Создаем экземпляр роутера
 router = DefaultRouter()
@@ -58,7 +58,9 @@ urlpatterns = [
     path('api/orders/remove-product/<int:product_id>/', AddDeleteItemOrderAPIView.as_view(),
          name='remove Product from Order'),
     path('api/orders/detail/<int:order_id>/', OrderDetailView.as_view(), name='order-detail'),
-    path('api/orders/user-confirm/<int:order_id>/', ConfirmOrderUserAPIView.as_view(), name='order-confirm'),
+    path('api/orders/user/confirm/<int:order_id>/', ConfirmOrderUserAPIView.as_view(), name='order-confirm'),
+    path('api/orders/supplier/change-status/<int:order_id>/', ChangeStatusOrderSupplierAPIView.as_view(),
+         name='order-change-status'),
     path('api/upload-data/', UploadYamlFileView.as_view(), name='upload-yaml-data'),
 
 ]

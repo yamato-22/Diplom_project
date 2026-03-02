@@ -158,6 +158,50 @@ def check_order_supplier_unique(order):
         return False
     return True
 
+@transaction.atomic
+def change_status_order_supplier(supplier, order_id, new_status):
+    """
+    Изменение статуса заказа Поставщиком,
+    в процессе обработки подтвержденного покупателем заказа
+    пользователь не может редактировать заказ.
+    :param user_id:
+    :param order_id:
+    :return:
+    """
+
+    try:
+        order = Order.objects.get(id=order_id)
+        current_status = order.status
+        company = order.products.first().company
+        if company is None:
+            raise ValidationError("INot items found in order")
+        owner = company.owner
+        if owner.id != supplier.id:
+            raise PermissionDenied("You don't own this order.")
+        if new_status not in [status[1] for status in STATUS_CHOICES]:
+            raise ValidationError("Invalid status value.")
+        if new_status in [STATUS_CHOICES[0][1], STATUS_CHOICES[1][1]]:
+            raise ValidationError("This status ONLY customer")
+
+        # Составляем словарь соответствия названий статусов их индексам
+        status_indexes = {status_label: index for index, (_, status_label) in enumerate(STATUS_CHOICES)}
+
+        # Получаем индексы текущего и целевого статусов
+        current_index = status_indexes.get(current_status)
+        target_index = status_indexes.get(new_status)
+        if target_index != current_index + 1:
+            raise ValidationError(f"Status '{new_status}' not next after '{current_status}'.")
+
+        # проверяем, возможен ли новый статус
+        order.status = new_status
+        order.save()
+        return order
+
+    except Order.DoesNotExist:
+        raise ValidationError('Order not found.')
+
+
+
 
 
 
