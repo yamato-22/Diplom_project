@@ -174,7 +174,7 @@ def change_status_order_supplier(supplier, order_id, new_status):
         current_status = order.status
         company = order.products.first().company
         if company is None:
-            raise ValidationError("INot items found in order")
+            raise ValidationError("Not items found in order")
         owner = company.owner
         if owner.id != supplier.id:
             raise PermissionDenied("You don't own this order.")
