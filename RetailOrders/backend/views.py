@@ -232,9 +232,10 @@ class CategoryViewSet(ModelViewSet):
     """
     ViewSet for CRUD operations with product categories.
     """
+    permission_classes = [IsAuthenticated]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    http_method_names = ['get', 'post', 'patch']
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
 class ProductViewSet(ModelViewSet):
     """
@@ -255,14 +256,16 @@ class PropertyViewSet(ModelViewSet):
     """
     ViewSet for CRUD operations with property of product.
     """
+    permission_classes = [IsAuthenticated]
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
-    http_method_names = ['get', 'post', 'patch']
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
 class ProductPropertyViewSet(ModelViewSet):
     """
     ViewSet for CRUD operations with property of product.
     """
+    permission_classes = [IsAuthenticated]
     queryset = ProductProperty.objects.all()
     serializer_class = ProductPropertySerializer
     http_method_names = ['get', 'post', 'patch', 'delete']

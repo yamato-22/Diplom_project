@@ -76,7 +76,9 @@ python manage.py migrate
 ### [Работа с пользователями](docs/users_api.md)
 ### [Работа с контактами пользователя](docs/contacts_api.md)
 ### [Работа с компаниями](docs/company_api.md)
-### Работа с товарами...
+### [Работа с категориями товаров](docs/category_api.md)
+### [Работа с товарами](docs/products_api.md)
+### [Работа со свойствами товаров](docs/properties_api.md)
 ### Работа с заказами...
 ### Загрузка данных...
 
