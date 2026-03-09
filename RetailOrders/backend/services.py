@@ -115,48 +115,44 @@ def calculate_and_update_total_amount(order):
     order.total_amount = total_sum
     order.save()
 
-@transaction.atomic
-def set_confirm_order_user(user_id, order_id):
+
+def confirm_order_buyer(user, order_id):
     """
-    Подтверждение пользователем своего заказа,
+    Сервисная функция для подтверждения заказа покупателем,
     после подтверждения заказ отправляется Поставщику,
-    пользователь не может редактировать заказ.
-    :param user_id:
-    :param order_id:
-    :return:
+    Покупатель далее не может редактировать заказ.
     """
+
+    # Проверяем, что пользователь является покупателем
+    if user.role != 'buyer':
+        raise PermissionError("Only the buyer can confirm the order.")
+
     try:
+           # Получаем заказ
         order = Order.objects.select_related('user').get(id=order_id)
 
-        if order.user_id != user_id:
-            raise PermissionDenied("You don't own this order")
+        # Проверяем права пользователя на подтверждение заказа
+        if order.user_id != user.id:
+            raise PermissionError("You don't own this order")
 
-        if order.status != STATUS_CHOICES[0][0]:
-            raise ValidationError(f"Order {order.pk} have NOT CHANGE status {order.status} ")
+        if order.status != 'new':
+            raise ValueError(f"Order id: {order.pk} cannot change status to {order.status} by user")
 
-        if check_order_supplier_unique(order):
-            order.status = STATUS_CHOICES[1][0]
+        # Проверяем уникальность поставщика всех товаров в заказе
+        suppliers = set()
+        for item in order.order.all():
+            suppliers.add(item.product.company_id)
+        if len(suppliers) > 1:
+            raise ValueError("All products in the order must belong to the same supplier.")
+
+        # Меняем статус заказа на "Подтверждён"
+        with transaction.atomic():
+            order.status = 'confirmed'
             order.save()
-            return order
-        else:
-            raise ValidationError("All products in the order must belong to the same supplier.")
 
     except Order.DoesNotExist:
-        raise ValidationError('Order not found.')
+        raise LookupError("Order not found")
 
-
-
-def check_order_supplier_unique(order):
-    """
-    Проверка заказа на принадлежность товаров к одному поставщику
-    :param order:
-    :return:
-    """
-    suppliers_ids = set(order.orderitem_set.values_list('product__company_id', flat=True))
-
-    if len(suppliers_ids) > 1:
-        return False
-    return True
 
 @transaction.atomic
 def change_status_order_supplier(supplier, order_id, new_status):
@@ -199,10 +195,6 @@ def change_status_order_supplier(supplier, order_id, new_status):
 
     except Order.DoesNotExist:
         raise ValidationError('Order not found.')
-
-
-
-
 
 
 def load_data_from_yaml(yaml_file, user):

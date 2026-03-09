@@ -23,8 +23,8 @@ from rest_framework.routers import DefaultRouter
 from backend.views import (RegisterAccount, UserRetrieveUpdate, ChangeUserPasswordView, ContactsView,
                            ContactDetailView, CompanyAPIView, ProductViewSet, CategoryViewSet,
                            PropertyViewSet,  ProductPropertyViewSet, ProductDetailView, OrderCreateView,
-                           UserOrdersListView,  AddDeleteItemOrderAPIView, OrderDetailView, UploadYamlFileView,
-                           ConfirmOrderUserAPIView, ChangeStatusOrderSupplierAPIView)
+                           UserOrdersListView, UserOrderView, AddDeleteItemOrderAPIView, OrderDetailView,
+                           UploadYamlFileView, ConfirmOrderBuyerAPIView, ChangeStatusOrderSupplierAPIView)
 
 # Создаем экземпляр роутера
 router = DefaultRouter()
@@ -49,17 +49,18 @@ urlpatterns = [
     path('api/user/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/user/contact', ContactsView.as_view(), name='contacts'),
     path('api/user/contact/<int:pk>/', ContactDetailView.as_view(), name='specific-contact'),
-    path('api/user/orders/', UserOrdersListView.as_view(), name='user-orders'),
     path('api/company/', CompanyAPIView.as_view(), name='company-list-create'),
     path('api/company/<int:company_id>/', CompanyAPIView.as_view(), name='company-get-update-delete'),
     path('api/productdetail/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
-    path('api/orders/create/', OrderCreateView.as_view(), name='order-create'),
-    path('api/orders/add-product/', AddDeleteItemOrderAPIView.as_view(), name='add_product_to_order'),
-    path('api/orders/remove-product/<int:product_id>/', AddDeleteItemOrderAPIView.as_view(),
+    path('api/order', UserOrdersListView.as_view(), name='list-user-orders'),
+    path('api/order/<int:pk>/', UserOrderView.as_view(), name='user-order'),
+    path('api/order/create/', OrderCreateView.as_view(), name='order-create'),
+    path('api/order/add-product/', AddDeleteItemOrderAPIView.as_view(), name='add_product_to_order'),
+    path('api/order/remove-product/<int:product_id>/', AddDeleteItemOrderAPIView.as_view(),
          name='remove Product from Order'),
-    path('api/orders/detail/<int:order_id>/', OrderDetailView.as_view(), name='order-detail'),
-    path('api/orders/user/confirm/<int:order_id>/', ConfirmOrderUserAPIView.as_view(), name='order-confirm'),
-    path('api/orders/supplier/change-status/<int:order_id>/', ChangeStatusOrderSupplierAPIView.as_view(),
+    path('api/order/detail/<int:order_id>/', OrderDetailView.as_view(), name='order-detail'),
+    path('api/order/buyer/confirm/<int:order_id>/', ConfirmOrderBuyerAPIView.as_view(), name='buyer-order-confirm'),
+    path('api/order/supplier/change-status/<int:order_id>/', ChangeStatusOrderSupplierAPIView.as_view(),
          name='order-change-status'),
     path('api/upload-data/', UploadYamlFileView.as_view(), name='upload-yaml-data'),
 

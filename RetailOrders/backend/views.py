@@ -1,6 +1,7 @@
+from django.core.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser
 from django.contrib.auth.password_validation import validate_password
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet
 from django.http import JsonResponse
 from rest_framework import status
@@ -8,7 +9,7 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .services import (add_product_to_order, remove_product_from_order, load_data_from_yaml, set_confirm_order_user,
+from .services import (add_product_to_order, remove_product_from_order, load_data_from_yaml, confirm_order_buyer,
                        change_status_order_supplier)
 from .models import Contact, Company, Product, Category, Property, ProductProperty, Order
 from .serializers import (UserSerializer, UserCreateSerializer, UserChangePasswordSerializer,
@@ -170,7 +171,7 @@ class ContactDetailView(APIView):
                         status=status.HTTP_204_NO_CONTENT)
 
 class CompanyAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_company(self, company_id):
         try:
@@ -232,7 +233,7 @@ class CategoryViewSet(ModelViewSet):
     """
     ViewSet for CRUD operations with product categories.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -243,6 +244,8 @@ class ProductViewSet(ModelViewSet):
     """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
 class ProductDetailView(generics.RetrieveAPIView):
     """
@@ -250,13 +253,14 @@ class ProductDetailView(generics.RetrieveAPIView):
     """
     queryset = Product.objects.all()  # Все доступные продукты
     serializer_class = ProductAllPropertySerializer  # Используемый сериализатор
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class PropertyViewSet(ModelViewSet):
     """
     ViewSet for CRUD operations with property of product.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = Property.objects.all()
     serializer_class = PropertySerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -265,7 +269,7 @@ class ProductPropertyViewSet(ModelViewSet):
     """
     ViewSet for CRUD operations with property of product.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = ProductProperty.objects.all()
     serializer_class = ProductPropertySerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
@@ -285,6 +289,15 @@ class OrderCreateView(generics.CreateAPIView):
         и устанавливаем статус заказа "new".
         """
         serializer.save(user=self.request.user, status="new", total_amount=0)
+
+class UserOrderView(generics.RetrieveAPIView):
+    """
+    Возвращает заказ, по переданному в запросе id.
+    """
+
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
 
 class UserOrdersListView(generics.ListAPIView):
     """
@@ -325,7 +338,7 @@ class AddDeleteItemOrderAPIView(APIView):
             return Response({'Error': str(e)}, status=400)
 
     def delete(self, request, product_id):
-        order_id = request.data.get('order_id')  # Получить id заказа из тела запроса
+        order_id = request.data.get('order_id')
         user_id = request.user.id
         try:
             remove_product_from_order(user_id, order_id, product_id)
@@ -333,30 +346,33 @@ class AddDeleteItemOrderAPIView(APIView):
         except Exception as e:
             return Response({'Error': str(e)}, status=400)
 
-class ConfirmOrderUserAPIView(APIView):
+
+class ConfirmOrderBuyerAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, order_id):
         """
-        Устанавливаем статус подтверждения заказа пользователем
+        Подтверждение заказа покупателем
         """
-        user_id = request.user.id
+
+        user = request.user
 
         try:
-            # Запускаем процедуру подтверждения заказа
-            confirmed_order = set_confirm_order_user(user_id, order_id)
+            confirm_order_buyer(user, order_id)
+            return Response({"message": f'Order {order_id} successfully confirmed'},
+                            status=status.HTTP_200_OK)
 
-            # Возвращаем информацию о подтверждённом заказе
-            return Response({
-                'Message': 'Статус заказа изменён на Подтвержден',
-                'Order': {
-                    'ID': confirmed_order.id,
-                    'Status': confirmed_order.status
-                }
-            }, status=status.HTTP_200_OK)
+        except ValueError as v:
+            return Response({"error": str(v)}, status=status.HTTP_400_BAD_REQUEST)
+
+        except PermissionError as p:
+            return Response({"error": str(p)}, status=status.HTTP_403_FORBIDDEN)
+
+        except LookupError as l:
+            return Response({"error": str(l)}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            return Response({'Error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
