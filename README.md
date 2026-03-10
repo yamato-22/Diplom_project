@@ -87,3 +87,6 @@ python manage.py migrate
 ### [Работа с заказами](docs/orders_api.md)
 ### [Загрузка данных](docs/load_data_api.md)
 
+# Примеры использования API
+### [Http запросы в Postman:](https://documenter.getpostman.com/view/51789537/2sBXierDsP)
+

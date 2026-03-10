@@ -150,3 +150,12 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,                           # Ключ для подписания токенов
     'AUTH_HEADER_TYPES': ('Bearer',),                    # Тип авторизационного заголовка
 }
+
+# Параметры для настройки почтового бэкенда
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.mail.ru'
+EMAIL_HOST_USER = 'netology.diplom@mail.ru'
+EMAIL_HOST_PASSWORD = 'CLdm7yW4U9nivz9mbexu'
+EMAIL_PORT = '465'
+EMAIL_USE_SSL = True
+SERVER_EMAIL = EMAIL_HOST_USER

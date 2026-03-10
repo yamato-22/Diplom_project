@@ -168,19 +168,20 @@ def change_status_order_supplier(supplier, order_id, new_status):
     try:
         order = Order.objects.get(id=order_id)
         current_status = order.status
-        company = order.products.first().company
+        company = order.order.first().product.company
         if company is None:
             raise ValidationError("Not items found in order")
         owner = company.owner
         if owner.id != supplier.id:
             raise PermissionDenied("You don't own this order.")
-        if new_status not in [status[1] for status in STATUS_CHOICES]:
+        if new_status not in [status[0] for status in STATUS_CHOICES]:
             raise ValidationError("Invalid status value.")
         if new_status in [STATUS_CHOICES[0][1], STATUS_CHOICES[1][1]]:
             raise ValidationError("This status ONLY customer")
 
         # Составляем словарь соответствия названий статусов их индексам
-        status_indexes = {status_label: index for index, (_, status_label) in enumerate(STATUS_CHOICES)}
+        status_indexes = {status_label: index for index, (status_label,_) in enumerate(STATUS_CHOICES)}
+        print(status_indexes)
 
         # Получаем индексы текущего и целевого статусов
         current_index = status_indexes.get(current_status)
